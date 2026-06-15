@@ -94,6 +94,17 @@ export default function App() {
     };
   }, []);
 
+  // Auto-open register modal from email link (?register=email@...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const regEmail = params.get("register");
+    if (regEmail) {
+      setRegisterEmail(regEmail);
+      setShowAuth(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   async function handleLogout() {
     await logoutUser();
     localStorage.removeItem("bolao_acesso");
@@ -110,17 +121,6 @@ export default function App() {
       </div>
     );
   }
-
-  // Auto-open register modal from email link (?register=email@...)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const regEmail = params.get("register");
-    if (regEmail) {
-      setRegisterEmail(regEmail);
-      setShowAuth(true);
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, []);
 
   if (!unlocked) {
     return (
