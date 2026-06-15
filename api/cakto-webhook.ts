@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 let adminInitialized = false;
-let db: FirebaseFirestore.Firestore;
+let db: any;
 
 function initFirebase() {
   if (adminInitialized) return;
