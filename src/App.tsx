@@ -56,6 +56,7 @@ export default function App() {
   const [paid, setPaid] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
+  const [registerEmail, setRegisterEmail] = useState("");
   const [currentPage, setCurrentPage] = useState<PageId>("inicio");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data, loading, error } = useWorldCup();
@@ -110,6 +111,17 @@ export default function App() {
     );
   }
 
+  // Auto-open register modal from email link (?register=email@...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const regEmail = params.get("register");
+    if (regEmail) {
+      setRegisterEmail(regEmail);
+      setShowAuth(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   if (!unlocked) {
     return (
       <>
@@ -118,6 +130,8 @@ export default function App() {
           <AuthModal
             onSuccess={() => setShowAuth(false)}
             onClose={() => setShowAuth(false)}
+            defaultEmail={registerEmail}
+            defaultMode={registerEmail ? "register" : "login"}
           />
         )}
       </>

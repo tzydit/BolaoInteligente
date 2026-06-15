@@ -4,11 +4,13 @@ import { registerUser, loginUser } from "../api/firebase";
 interface AuthModalProps {
   onSuccess: () => void;
   onClose: () => void;
+  defaultEmail?: string;
+  defaultMode?: "login" | "register";
 }
 
-export default function AuthModal({ onSuccess, onClose }: AuthModalProps) {
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState("");
+export default function AuthModal({ onSuccess, onClose, defaultEmail = "", defaultMode = "login" }: AuthModalProps) {
+  const [mode, setMode] = useState<"login" | "register">(defaultMode);
+  const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
