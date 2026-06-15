@@ -176,16 +176,22 @@ export default function App() {
             onClose={() => setSidebarOpen(false)}
           />
 
-          <div className="fixed top-0 left-0 right-0 z-30 flex h-12 items-center justify-between border-b border-glass-border bg-pitch-light/90 backdrop-blur-xl px-4 md:hidden">
-            <span className="text-[13px] font-semibold text-white">Bolão Inteligente</span>
-            <button onClick={() => setSidebarOpen(true)} className="text-silver-mid">
+          <div className="fixed top-0 left-0 right-0 z-30 flex h-14 items-center justify-between border-b border-glass-border bg-pitch/95 backdrop-blur-xl px-4 md:hidden">
+            <div className="flex items-center gap-2.5">
+              <span className="text-lg">⚽</span>
+              <div>
+                <div className="text-[13px] font-bold text-white leading-none">Bolão Inteligente</div>
+                <div className="text-[9px] text-field font-medium">Copa 2026</div>
+              </div>
+            </div>
+            <button onClick={() => setSidebarOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface/80 text-silver-mid transition hover:text-white">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
           </div>
 
-          <main className="min-h-screen flex-1 px-6 py-6 md:ml-56 max-md:mt-12 max-md:px-4">
+          <main className="min-h-screen flex-1 px-4 py-6 md:ml-60 md:px-8 md:py-8 max-md:mt-14">
             <PageComponent />
           </main>
         </div>

@@ -126,13 +126,18 @@ export default function GeradorIA() {
   const form2 = sel2 ? getTeamForm(sel2) : [];
 
   return (
-    <div className="animate-fade-up">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">Gerador de Palpites IA</h1>
-        <p className="text-[13px] text-silver-dim">Ranking FIFA · Histórico desde 2018 · Escanteios · Chances de gol</p>
+    <div className="animate-fade-up space-y-6">
+      <div>
+        <div className="mb-1 flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gold/20 to-field/10 text-lg">🤖</div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Palpites IA</h1>
+            <p className="text-[12px] text-silver-dim">FIFA · Histórico · Escanteios · Chances de gol</p>
+          </div>
+        </div>
       </div>
 
-      <div className="glass rounded-xl p-6">
+      <div className="glass rounded-2xl p-6">
         <label className="mb-2 block text-[13px] font-medium text-silver">Selecione o jogo</label>
         <select
           value={selected}
@@ -257,7 +262,7 @@ export default function GeradorIA() {
           <div className="mt-6 animate-fade-up space-y-4">
 
             {/* Prediction */}
-            <div className="rounded-xl border border-field/8 bg-field/[0.03] p-5">
+            <div className="rounded-2xl border border-field/10 bg-field/[0.04] p-5 shadow-lg shadow-field/5">
               <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-gold">Palpite</div>
               <div className="mb-4 text-xl font-bold text-white">{result.prediction}</div>
 
@@ -280,7 +285,7 @@ export default function GeradorIA() {
             </div>
 
             {/* Goal Markets */}
-            <div className="rounded-xl border border-glass-border bg-surface/50 p-5">
+            <div className="rounded-2xl border border-glass-border bg-surface/50 p-5">
               <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-gold">Mercados de Gols</div>
               <div className="grid grid-cols-3 gap-2 mb-3">
                 <OddCard label="Over 0.5" value={`${Math.min(95, advancedStats.goalsOver15 + 20)}%`} sub="+ de 0 gols" />
@@ -295,7 +300,7 @@ export default function GeradorIA() {
             </div>
 
             {/* Advanced Stats */}
-            <div className="rounded-xl border border-glass-border bg-surface/50 p-5">
+            <div className="rounded-2xl border border-glass-border bg-surface/50 p-5">
               <div className="mb-3 flex items-center justify-between">
                 <span className="text-[11px] font-medium uppercase tracking-wider text-gold">Estatísticas Estimadas</span>
                 <span className="text-[10px] text-silver-dim">
@@ -313,7 +318,7 @@ export default function GeradorIA() {
             </div>
 
             {/* Reasons */}
-            <div className="rounded-xl border border-glass-border bg-surface/50 p-5">
+            <div className="rounded-2xl border border-glass-border bg-surface/50 p-5">
               <div className="mb-3 text-[11px] font-medium uppercase tracking-wider text-gold">Fundamentos da Análise</div>
               <ul className="space-y-2">
                 {result.reasons.map((r, i) => (

@@ -5,12 +5,15 @@ import { pt } from "../api/translations";
 import { formatDatePT, formatTime, isToday } from "../api/dates";
 import type { OpenFootballMatch, OpenFootballTeam } from "../api/football";
 
-function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
+function Stat({ label, value, sub, icon }: { label: string; value: string; sub: string; icon: string }) {
   return (
-    <div className="glass rounded-xl p-5">
-      <div className="mb-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-silver-dim">{label}</div>
-      <div className="text-2xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-[12px] text-field">{sub}</div>
+    <div className="glass group rounded-2xl p-5 transition hover:border-field/15 hover:shadow-lg hover:shadow-field/5">
+      <div className="mb-3 flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-field/8 text-sm text-field transition group-hover:bg-field/12">{icon}</div>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-silver-dim">{label}</span>
+      </div>
+      <div className="text-2xl font-bold tracking-tight text-white">{value}</div>
+      <div className="mt-1.5 text-[12px] text-field/80">{sub}</div>
     </div>
   );
 }
@@ -57,7 +60,7 @@ function MatchCard({ match, teams, liveMinute, isLive, isHalftime }: MatchCardPr
   const t2 = teams.find((t) => t.name === match.team2);
 
   return (
-    <div className="glass rounded-xl p-4 transition hover:border-field/10">
+    <div className="glass rounded-2xl p-4 transition hover:border-field/12 hover:shadow-md hover:shadow-field/5">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[10px] font-medium uppercase tracking-wider text-silver-dim">
           {match.group?.replace("Group", "Grupo")}
@@ -161,35 +164,40 @@ export default function Inicio() {
   const aiTip = nextMatch ? generateAIPrediction(nextMatch.team1, nextMatch.team2, teams, matches) : null;
 
   return (
-    <div className="animate-fade-up">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">Copa do Mundo 2026</h1>
-        <p className="text-[13px] text-silver-dim">EUA · México · Canadá — Dados atualizados em tempo real</p>
+    <div className="animate-fade-up space-y-6">
+      <div>
+        <div className="mb-1 flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-field/15 to-gold/10 text-lg">🏆</div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Copa do Mundo 2026</h1>
+            <p className="text-[12px] text-silver-dim">EUA · México · Canadá — Dados em tempo real</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Jogos Realizados" value={`${finishedMatches.length}/104`} sub={`${totalGoals} gols · Média ${avgGoals}/jogo`} />
-        <Stat label="Seleções" value="48" sub="12 grupos · 16 estádios · 3 países" />
-        <Stat label="Artilheiro" value={topScorer ? topScorer[0] : "—"} sub={topScorer ? `${topScorer[1]} gol(s) no torneio` : "Torneio em andamento"} />
-        <Stat label="Próximo Jogo" value={nextMatch ? `${pt(nextMatch.team1)} vs ${pt(nextMatch.team2)}` : "—"} sub={nextMatch ? `${formatDatePT(nextMatch.date)} ${formatTime(nextMatch.time)} · ${nextMatch.group?.replace("Group", "Grupo")}` : ""} />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Stat icon="⚽" label="Jogos Realizados" value={`${finishedMatches.length}/104`} sub={`${totalGoals} gols · Média ${avgGoals}/jogo`} />
+        <Stat icon="🌍" label="Seleções" value="48" sub="12 grupos · 16 estádios · 3 países" />
+        <Stat icon="🥇" label="Artilheiro" value={topScorer ? topScorer[0] : "—"} sub={topScorer ? `${topScorer[1]} gol(s) no torneio` : "Torneio em andamento"} />
+        <Stat icon="📅" label="Próximo Jogo" value={nextMatch ? `${pt(nextMatch.team1)} vs ${pt(nextMatch.team2)}` : "—"} sub={nextMatch ? `${formatDatePT(nextMatch.date)} ${formatTime(nextMatch.time)} · ${nextMatch.group?.replace("Group", "Grupo")}` : ""} />
       </div>
 
       {/* Live Matches */}
       {liveMatches.length > 0 && (
-        <>
+        <div>
           <div className="mb-3 flex items-center gap-2">
             <LiveBadge />
             <h2 className="text-sm font-semibold text-white">
               {liveMatches.length === 1 ? "Jogo ao Vivo" : `${liveMatches.length} Jogos ao Vivo`}
             </h2>
           </div>
-          <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {liveMatches.map((m, i) => (
               <MatchCard key={i} match={m} teams={teams} isLive liveMinute={m._minute} isHalftime={m._halftime} />
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {/* Today's matches (not yet started) */}
@@ -197,38 +205,44 @@ export default function Inicio() {
         const todayNotStarted = upcomingMatches.filter((m) => isToday(m.date));
         if (todayNotStarted.length === 0) return null;
         return (
-          <>
-            <h2 className="mb-3 text-sm font-semibold text-silver">Jogos de Hoje</h2>
-            <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div>
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-silver">
+              <span className="text-base">📌</span> Jogos de Hoje
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {todayNotStarted.map((m, i) => <MatchCard key={i} match={m} teams={teams} />)}
             </div>
-          </>
+          </div>
         );
       })()}
 
       {/* Recent results */}
       {recentMatches.length > 0 && (
-        <>
-          <h2 className="mb-3 text-sm font-semibold text-silver">Resultados Recentes</h2>
-          <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-silver">
+            <span className="text-base">📊</span> Resultados Recentes
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {recentMatches.map((m, i) => <MatchCard key={i} match={m} teams={teams} />)}
           </div>
-        </>
+        </div>
       )}
 
       {/* Upcoming */}
       {upcomingMatches.filter((m) => !isToday(m.date)).length > 0 && (
-        <>
-          <h2 className="mb-3 text-sm font-semibold text-silver">Próximos Jogos</h2>
-          <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-silver">
+            <span className="text-base">🗓️</span> Próximos Jogos
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {upcomingMatches.filter((m) => !isToday(m.date)).slice(0, 6).map((m, i) => <MatchCard key={i} match={m} teams={teams} />)}
           </div>
-        </>
+        </div>
       )}
 
       {/* AI Tip */}
       {aiTip && nextMatch && (
-        <div className="glass rounded-xl border-gold/10 p-6">
+        <div className="glass rounded-2xl border-gold/15 p-6 shadow-lg shadow-gold/5">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />

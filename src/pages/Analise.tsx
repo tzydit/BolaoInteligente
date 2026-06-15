@@ -64,25 +64,30 @@ export default function Analise() {
   const isGroupView = groupFilter !== "all";
 
   return (
-    <div className="animate-fade-up">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">Análise de Times</h1>
-        <p className="text-[13px] text-silver-dim">Dados reais · 48 seleções · Ranking FIFA atualizado</p>
+    <div className="animate-fade-up space-y-6">
+      <div>
+        <div className="mb-1 flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-field/15 to-gold/10 text-lg">📊</div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Classificação</h1>
+            <p className="text-[12px] text-silver-dim">48 seleções · Ranking FIFA atualizado</p>
+          </div>
+        </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className={selectCls}>
           <option value="all">Todos os Grupos</option>
           {groups.map((g) => <option key={g.name} value={g.name.replace("Group ", "")}>Grupo {g.name.replace("Group ", "")}</option>)}
         </select>
         {isGroupView && (
-          <span className="flex items-center rounded-lg bg-field/8 px-3 text-[11px] text-field">
-            Classificação do Grupo {groupFilter}
+          <span className="flex items-center rounded-lg bg-field/8 px-3 py-1.5 text-[11px] font-medium text-field">
+            Grupo {groupFilter}
           </span>
         )}
       </div>
 
-      <div className="glass mb-6 overflow-x-auto rounded-xl">
+      <div className="glass overflow-x-auto rounded-2xl">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-glass-border text-[10px] uppercase tracking-wider text-silver-dim">
@@ -141,8 +146,10 @@ export default function Analise() {
       </div>
 
       {/* Confronto */}
-      <div className="glass rounded-xl p-6">
-        <h3 className="mb-4 text-sm font-semibold text-white">Confronto Direto</h3>
+      <div className="glass rounded-2xl p-6">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+          <span className="text-base">⚔️</span> Confronto Direto
+        </h3>
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <select value={teamA} onChange={(e) => setTeamA(e.target.value)} className={`min-w-[150px] ${selectCls}`}>
             <option value="">Selecionar...</option>

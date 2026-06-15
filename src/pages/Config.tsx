@@ -31,21 +31,28 @@ export default function Config() {
   const finished = matches.filter((m) => m.score).length;
 
   return (
-    <div className="animate-fade-up">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">Configurações</h1>
-        <p className="text-[13px] text-silver-dim">Personalize sua experiência</p>
+    <div className="animate-fade-up space-y-6">
+      <div>
+        <div className="mb-1 flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-field/15 to-gold/10 text-lg">⚙️</div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white">Configurações</h1>
+            <p className="text-[12px] text-silver-dim">Personalize sua experiência</p>
+          </div>
+        </div>
       </div>
 
-      <div className="glass mb-4 rounded-xl p-5">
-        <h3 className="mb-3 text-[13px] font-semibold text-gold">Notificações</h3>
+      <div className="glass rounded-2xl p-5">
+        <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-gold">
+          <span>🔔</span> Notificações
+        </h3>
         <Row label="Lembrete antes dos jogos" sub="Alerta 30min antes do início" right={<Toggle initial />} />
         <Row label="Placar ao vivo" sub="Notificações de gols em tempo real" right={<Toggle initial />} />
         <Row label="Palpite do dia" sub="Sugestão da IA antes de cada rodada" right={<Toggle initial />} />
       </div>
 
-      <div className="glass mb-4 rounded-xl p-5">
-        <h3 className="mb-3 text-[13px] font-semibold text-gold">Conta</h3>
+      <div className="glass rounded-2xl p-5">
+        <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-gold"><span>👤</span> Conta</h3>
         {user ? (
           <>
             <Row label="E-mail" sub={user.email ?? "—"} right={
@@ -72,8 +79,8 @@ export default function Config() {
         )}
       </div>
 
-      <div className="glass mb-4 rounded-xl p-5">
-        <h3 className="mb-3 text-[13px] font-semibold text-gold">Dados</h3>
+      <div className="glass rounded-2xl p-5">
+        <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-gold"><span>📡</span> Dados</h3>
         <Row label="Fonte de dados" sub="openfootball/worldcup.json (GitHub)" right={
           <span className="rounded-full bg-field/10 px-2.5 py-0.5 text-[10px] font-medium text-field">Conectado</span>
         } />
@@ -90,8 +97,8 @@ export default function Config() {
         } />
       </div>
 
-      <div className="glass rounded-xl p-5">
-        <h3 className="mb-3 text-[13px] font-semibold text-gold">Plano</h3>
+      <div className="glass rounded-2xl p-5">
+        <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-gold"><span>💎</span> Plano</h3>
         <Row label="Status" sub="Premium · Acesso completo" right={
           <span className="rounded-full bg-gold/10 px-2.5 py-0.5 text-[10px] font-medium text-gold">Ativo</span>
         } />
