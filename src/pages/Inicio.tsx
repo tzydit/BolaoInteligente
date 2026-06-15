@@ -24,10 +24,12 @@ function LiveBadge() {
   );
 }
 
-function getMatchMinute(match: OpenFootballMatch): number | null {
-  if (!match.time || !isToday(match.date)) return null;
+function getMatchStatus(match: OpenFootballMatch): { isLive: boolean; minute: number | null; isHalftime: boolean } {
+  if (match.score) return { isLive: false, minute: null, isHalftime: false };
+  if (!match.time || !isToday(match.date)) return { isLive: false, minute: null, isHalftime: false };
+
   const timeParts = match.time.replace(/\s*UTC.*/, "").split(":");
-  if (timeParts.length < 2) return null;
+  if (timeParts.length < 2) return { isLive: false, minute: null, isHalftime: false };
   const matchStartHour = parseInt(timeParts[0], 10);
   const matchStartMin = parseInt(timeParts[1], 10);
 
@@ -35,27 +37,24 @@ function getMatchMinute(match: OpenFootballMatch): number | null {
   const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), matchStartHour, matchStartMin).getTime();
   const elapsed = Math.floor((now.getTime() - startMs) / 60000);
 
-  if (elapsed < 0 || elapsed > 120) return null;
+  if (elapsed < 0 || elapsed > 120) return { isLive: false, minute: null, isHalftime: false };
 
-  // Account for halftime (15min break at 45')
-  if (elapsed <= 45) return elapsed;
-  if (elapsed <= 60) return 45; // halftime
-  return Math.min(90, elapsed - 15);
+  if (elapsed <= 45) return { isLive: true, minute: elapsed, isHalftime: false };
+  if (elapsed <= 60) return { isLive: true, minute: 45, isHalftime: true };
+  return { isLive: true, minute: Math.min(90, elapsed - 15), isHalftime: false };
 }
 
 interface MatchCardProps {
   match: OpenFootballMatch;
   teams: OpenFootballTeam[];
+  liveMinute?: number | null;
   isLive?: boolean;
-  liveScore?: [number, number];
-  liveMinute?: number;
+  isHalftime?: boolean;
 }
 
-function MatchCard({ match, teams, isLive, liveScore, liveMinute }: MatchCardProps) {
+function MatchCard({ match, teams, liveMinute, isLive, isHalftime }: MatchCardProps) {
   const t1 = teams.find((t) => t.name === match.team1);
   const t2 = teams.find((t) => t.name === match.team2);
-  const hasScore = !!match.score || isLive;
-  const score = isLive ? liveScore : match.score?.ft;
 
   return (
     <div className="glass rounded-xl p-4 transition hover:border-field/10">
@@ -66,7 +65,9 @@ function MatchCard({ match, teams, isLive, liveScore, liveMinute }: MatchCardPro
         {isLive ? (
           <div className="flex items-center gap-2">
             <LiveBadge />
-            <span className="text-[11px] font-bold text-danger">{liveMinute}'</span>
+            <span className="text-[11px] font-bold text-danger">
+              {isHalftime ? "Intervalo" : `${liveMinute}'`}
+            </span>
           </div>
         ) : match.score ? (
           <span className="rounded-full bg-field/8 px-2 py-0.5 text-[10px] font-semibold text-field">Encerrado</span>
@@ -84,11 +85,15 @@ function MatchCard({ match, teams, isLive, liveScore, liveMinute }: MatchCardPro
           </div>
         </div>
 
-        {hasScore && score ? (
-          <div className={`rounded-lg bg-pitch px-4 py-1.5 text-center ${isLive ? "ring-1 ring-danger/30" : ""}`}>
-            <span className="text-xl font-extrabold text-white">{score[0]}</span>
+        {match.score ? (
+          <div className="rounded-lg bg-pitch px-4 py-1.5 text-center">
+            <span className="text-xl font-extrabold text-white">{match.score.ft[0]}</span>
             <span className="mx-2 text-silver-dim">-</span>
-            <span className="text-xl font-extrabold text-white">{score[1]}</span>
+            <span className="text-xl font-extrabold text-white">{match.score.ft[1]}</span>
+          </div>
+        ) : isLive ? (
+          <div className="rounded-lg bg-pitch px-4 py-1.5 text-center ring-1 ring-danger/30">
+            <span className="text-[11px] font-semibold text-danger">Em andamento</span>
           </div>
         ) : (
           <span className="text-sm font-semibold text-silver-dim">vs</span>
@@ -117,48 +122,29 @@ function MatchCard({ match, teams, isLive, liveScore, liveMinute }: MatchCardPro
 
 export default function Inicio() {
   const { matches, teams } = useWC();
+  const [, setTick] = useState(0);
 
-  // Find today's matches that could be live (no final score yet)
-  const todayMatches = matches.filter((m) => isToday(m.date) && !m.score);
-  const [liveMatch] = useState<OpenFootballMatch | null>(todayMatches[0] ?? null);
-  const [liveScore, setLiveScore] = useState<[number, number]>([0, 0]);
-  const [liveMinute, setLiveMinute] = useState(() => {
-    if (!liveMatch) return 0;
-    return getMatchMinute(liveMatch) ?? 1;
-  });
-
+  // Re-render every minute so live status updates
   useEffect(() => {
-    if (!liveMatch) return;
-
-    const interval = setInterval(() => {
-      // Try to use real time first
-      const realMinute = getMatchMinute(liveMatch);
-      if (realMinute !== null) {
-        setLiveMinute(realMinute);
-      } else {
-        // Fallback simulation
-        setLiveMinute((m) => {
-          if (m >= 90) return 90;
-          return Math.min(m + 1, 90);
-        });
-      }
-
-      // Simulate goals (less frequent, more realistic)
-      if (Math.random() < 0.03) {
-        setLiveScore((s) => {
-          const clone: [number, number] = [...s];
-          if (Math.random() < 0.5) clone[0]++;
-          else clone[1]++;
-          return clone;
-        });
-      }
-    }, 60000); // Update every minute for realism
-
+    const interval = setInterval(() => setTick((t) => t + 1), 60000);
     return () => clearInterval(interval);
-  }, [liveMatch]);
+  }, []);
 
+  // Categorize matches
   const finishedMatches = matches.filter((m) => m.score);
-  const upcomingMatches = matches.filter((m) => !m.score && m.group && m !== liveMatch).slice(0, 6);
+  const liveMatches: (OpenFootballMatch & { _minute: number | null; _halftime: boolean })[] = [];
+  const upcomingMatches: OpenFootballMatch[] = [];
+
+  for (const m of matches) {
+    if (m.score) continue;
+    const status = getMatchStatus(m);
+    if (status.isLive) {
+      liveMatches.push({ ...m, _minute: status.minute, _halftime: status.isHalftime });
+    } else if (m.group) {
+      upcomingMatches.push(m);
+    }
+  }
+
   const recentMatches = [...finishedMatches].reverse().slice(0, 6);
 
   const totalGoals = finishedMatches.reduce((s, m) => s + (m.score?.ft[0] ?? 0) + (m.score?.ft[1] ?? 0), 0);
@@ -171,7 +157,7 @@ export default function Inicio() {
   });
   const topScorer = [...scorerMap.entries()].sort((a, b) => b[1] - a[1])[0];
 
-  const nextMatch = liveMatch ?? matches.find((m) => !m.score && m.group);
+  const nextMatch = liveMatches[0] ?? upcomingMatches[0];
   const aiTip = nextMatch ? generateAIPrediction(nextMatch.team1, nextMatch.team2, teams, matches) : null;
 
   return (
@@ -189,18 +175,36 @@ export default function Inicio() {
         <Stat label="Próximo Jogo" value={nextMatch ? `${pt(nextMatch.team1)} vs ${pt(nextMatch.team2)}` : "—"} sub={nextMatch ? `${formatDatePT(nextMatch.date)} ${formatTime(nextMatch.time)} · ${nextMatch.group?.replace("Group", "Grupo")}` : ""} />
       </div>
 
-      {/* Live Match */}
-      {liveMatch && liveMinute < 90 && (
+      {/* Live Matches */}
+      {liveMatches.length > 0 && (
         <>
           <div className="mb-3 flex items-center gap-2">
             <LiveBadge />
-            <h2 className="text-sm font-semibold text-white">Jogo ao Vivo</h2>
+            <h2 className="text-sm font-semibold text-white">
+              {liveMatches.length === 1 ? "Jogo ao Vivo" : `${liveMatches.length} Jogos ao Vivo`}
+            </h2>
           </div>
-          <div className="mb-6">
-            <MatchCard match={liveMatch} teams={teams} isLive liveScore={liveScore} liveMinute={liveMinute} />
+          <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {liveMatches.map((m, i) => (
+              <MatchCard key={i} match={m} teams={teams} isLive liveMinute={m._minute} isHalftime={m._halftime} />
+            ))}
           </div>
         </>
       )}
+
+      {/* Today's matches (not yet started) */}
+      {(() => {
+        const todayNotStarted = upcomingMatches.filter((m) => isToday(m.date));
+        if (todayNotStarted.length === 0) return null;
+        return (
+          <>
+            <h2 className="mb-3 text-sm font-semibold text-silver">Jogos de Hoje</h2>
+            <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {todayNotStarted.map((m, i) => <MatchCard key={i} match={m} teams={teams} />)}
+            </div>
+          </>
+        );
+      })()}
 
       {/* Recent results */}
       {recentMatches.length > 0 && (
@@ -213,11 +217,11 @@ export default function Inicio() {
       )}
 
       {/* Upcoming */}
-      {upcomingMatches.length > 0 && (
+      {upcomingMatches.filter((m) => !isToday(m.date)).length > 0 && (
         <>
           <h2 className="mb-3 text-sm font-semibold text-silver">Próximos Jogos</h2>
           <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {upcomingMatches.map((m, i) => <MatchCard key={i} match={m} teams={teams} />)}
+            {upcomingMatches.filter((m) => !isToday(m.date)).slice(0, 6).map((m, i) => <MatchCard key={i} match={m} teams={teams} />)}
           </div>
         </>
       )}

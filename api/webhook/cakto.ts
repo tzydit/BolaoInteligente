@@ -76,27 +76,44 @@ async function sendWelcomeEmail(email: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Allow GET for health check
+  if (req.method === "GET") {
+    return res.status(200).json({ ok: true, webhook: "cakto" });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const secret = req.headers["x-cakto-secret"] || req.query.secret;
-  if (secret && secret !== process.env.CAKTO_WEBHOOK_SECRET) {
-    return res.status(401).json({ error: "Unauthorized" });
+  // Validate secret if configured
+  const webhookSecret = process.env.CAKTO_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const secret = req.headers["x-cakto-secret"] || req.headers["x-webhook-secret"] || req.query.secret;
+    if (secret !== webhookSecret) {
+      console.error("Secret mismatch. Received:", secret ? "yes" : "none");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
   }
 
   try {
-    const { email, status } = req.body;
+    const body = req.body || {};
+    console.log("Webhook received:", JSON.stringify(body));
 
+    // Extract email - Cakto may send as email, customer_email, or customer.email
+    const email = body.email || body.customer_email || body.customer?.email || body.buyer?.email;
     if (!email) {
-      return res.status(400).json({ error: "Email required" });
+      console.error("No email found in payload:", JSON.stringify(body));
+      return res.status(400).json({ error: "Email required", received_keys: Object.keys(body) });
     }
+
+    // Extract status - Cakto may use different field names
+    const status = body.status || body.payment_status || body.transaction_status || "approved";
 
     const usersRef = db.collection("users");
     const snapshot = await usersRef.where("email", "==", email).limit(1).get();
 
     // Compra aprovada
-    if (status === "approved" || status === "paid" || !status) {
+    if (["approved", "paid", "completed", "active"].includes(status)) {
       if (!snapshot.empty) {
         await snapshot.docs[0].ref.update({
           paid: true,
@@ -119,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Reembolso — revoga acesso
-    if (status === "refunded" || status === "refund" || status === "chargeback") {
+    if (["refunded", "refund", "chargeback", "cancelled", "canceled", "disputed"].includes(status)) {
       if (!snapshot.empty) {
         await snapshot.docs[0].ref.update({
           paid: false,
@@ -132,6 +149,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, skipped: true, status });
   } catch (err) {
     console.error("Webhook error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error", message: String(err) });
   }
 }
