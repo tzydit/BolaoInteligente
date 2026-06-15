@@ -24,6 +24,25 @@ function LiveBadge() {
   );
 }
 
+function getMatchMinute(match: OpenFootballMatch): number | null {
+  if (!match.time || !isToday(match.date)) return null;
+  const timeParts = match.time.replace(/\s*UTC.*/, "").split(":");
+  if (timeParts.length < 2) return null;
+  const matchStartHour = parseInt(timeParts[0], 10);
+  const matchStartMin = parseInt(timeParts[1], 10);
+
+  const now = new Date();
+  const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), matchStartHour, matchStartMin).getTime();
+  const elapsed = Math.floor((now.getTime() - startMs) / 60000);
+
+  if (elapsed < 0 || elapsed > 120) return null;
+
+  // Account for halftime (15min break at 45')
+  if (elapsed <= 45) return elapsed;
+  if (elapsed <= 60) return 45; // halftime
+  return Math.min(90, elapsed - 15);
+}
+
 interface MatchCardProps {
   match: OpenFootballMatch;
   teams: OpenFootballTeam[];
@@ -84,11 +103,10 @@ function MatchCard({ match, teams, isLive, liveScore, liveMinute }: MatchCardPro
         </div>
       </div>
 
-      {/* Scorers */}
       {match.score && (match.goals1?.length || match.goals2?.length) ? (
         <div className="mt-3 flex justify-between border-t border-glass-border pt-2.5 text-[10px] text-silver-dim">
-          <span>{match.goals1?.map((g) => `⚽ ${g.name} ${g.minute}'`).join("  ") || "—"}</span>
-          <span>{match.goals2?.map((g) => `⚽ ${g.name} ${g.minute}'`).join("  ") || "—"}</span>
+          <span>{match.goals1?.map((g) => `${g.name} ${g.minute}'`).join(", ") || "—"}</span>
+          <span>{match.goals2?.map((g) => `${g.name} ${g.minute}'`).join(", ") || "—"}</span>
         </div>
       ) : null}
 
@@ -100,21 +118,33 @@ function MatchCard({ match, teams, isLive, liveScore, liveMinute }: MatchCardPro
 export default function Inicio() {
   const { matches, teams } = useWC();
 
-  // Simulate a live match from today's matches
+  // Find today's matches that could be live (no final score yet)
   const todayMatches = matches.filter((m) => isToday(m.date) && !m.score);
   const [liveMatch] = useState<OpenFootballMatch | null>(todayMatches[0] ?? null);
   const [liveScore, setLiveScore] = useState<[number, number]>([0, 0]);
-  const [liveMinute, setLiveMinute] = useState(1);
+  const [liveMinute, setLiveMinute] = useState(() => {
+    if (!liveMatch) return 0;
+    return getMatchMinute(liveMatch) ?? 1;
+  });
 
   useEffect(() => {
     if (!liveMatch) return;
+
     const interval = setInterval(() => {
-      setLiveMinute((m) => {
-        if (m >= 90) return 90;
-        const next = m + Math.floor(Math.random() * 3) + 1;
-        return Math.min(next, 90);
-      });
-      if (Math.random() < 0.04) {
+      // Try to use real time first
+      const realMinute = getMatchMinute(liveMatch);
+      if (realMinute !== null) {
+        setLiveMinute(realMinute);
+      } else {
+        // Fallback simulation
+        setLiveMinute((m) => {
+          if (m >= 90) return 90;
+          return Math.min(m + 1, 90);
+        });
+      }
+
+      // Simulate goals (less frequent, more realistic)
+      if (Math.random() < 0.03) {
         setLiveScore((s) => {
           const clone: [number, number] = [...s];
           if (Math.random() < 0.5) clone[0]++;
@@ -122,7 +152,8 @@ export default function Inicio() {
           return clone;
         });
       }
-    }, 4000);
+    }, 60000); // Update every minute for realism
+
     return () => clearInterval(interval);
   }, [liveMatch]);
 
@@ -155,7 +186,7 @@ export default function Inicio() {
         <Stat label="Jogos Realizados" value={`${finishedMatches.length}/104`} sub={`${totalGoals} gols · Média ${avgGoals}/jogo`} />
         <Stat label="Seleções" value="48" sub="12 grupos · 16 estádios · 3 países" />
         <Stat label="Artilheiro" value={topScorer ? topScorer[0] : "—"} sub={topScorer ? `${topScorer[1]} gol(s) no torneio` : "Torneio em andamento"} />
-        <Stat label="Próximo Jogo" value={nextMatch ? `${pt(nextMatch.team1)} vs ${pt(nextMatch.team2)}` : "—"} sub={nextMatch ? `${formatDatePT(nextMatch.date)} · ${nextMatch.group?.replace("Group", "Grupo")}` : ""} />
+        <Stat label="Próximo Jogo" value={nextMatch ? `${pt(nextMatch.team1)} vs ${pt(nextMatch.team2)}` : "—"} sub={nextMatch ? `${formatDatePT(nextMatch.date)} ${formatTime(nextMatch.time)} · ${nextMatch.group?.replace("Group", "Grupo")}` : ""} />
       </div>
 
       {/* Live Match */}
@@ -207,7 +238,6 @@ export default function Inicio() {
           </div>
           <div className="mb-3 text-[15px] font-semibold text-field">{aiTip.prediction}</div>
 
-          {/* Mini probability bar */}
           <div className="mb-3 flex h-4 overflow-hidden rounded-full bg-pitch text-[9px] font-bold">
             <div className="flex items-center justify-center text-pitch bg-field transition-all" style={{ width: `${aiTip.probabilities.team1}%` }}>
               {aiTip.probabilities.team1}%
